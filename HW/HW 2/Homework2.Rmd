@@ -1,0 +1,220 @@
+---
+title: "Homework 2"
+author: "Alex Wako"
+output: pdf_document
+date: "2023-02-06"
+editor_options: 
+  markdown: 
+    wrap: 60
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+1.  This question uses the *cereal* data set available in
+    the Homework Assignment 2 on Canvas. The following
+    command can be used to read the data into R. Make sure
+    the "cereal.txt" file is in the same folder as your
+    R/Rmd file.
+
+```{r cereal}
+Cereal <- read.table("cereal.csv", header=T, sep = ",")
+str(Cereal)
+```
+
+The data set *cereal* contains measurements for a set of
+$77$ cereal brands. For this assignment only consider the
+following variables:
+
+-   Rating: Quality rating
+-   Protein: Amount of protein.
+-   Fat: Amount of fat.
+-   Fiber: Amount of fiber.
+-   Carbo: Amount of carbohydrates.
+-   Sugars: Amount of sugar.
+-   Potass: Amount of potassium.
+-   Vitamins: Amount of vitamins.
+-   Cups: Portion size in cups.
+
+Our goal is to study how *rating* is related to all other 8
+variables.\
+\
+(a) (4pts) Explore the data and perform a descriptive
+analysis of each variable, include any plot/statistics that
+you find relevant (histograms, scatter diagrams, correlation
+coefficients). Did you find any outlier? If yes, is it
+reasonable to remove this observation? why?
+\
+```{r 1a}
+plot(Cereal$rating, Cereal$protein)
+cor(Cereal$rating, Cereal$protein)
+plot(Cereal$rating, Cereal$fat)
+cor(Cereal$rating, Cereal$fat)
+plot(Cereal$rating, Cereal$fiber)
+cor(Cereal$rating, Cereal$fiber)
+plot(Cereal$rating, Cereal$carbo)
+cor(Cereal$rating, Cereal$carbo)
+plot(Cereal$rating, Cereal$sugars)
+cor(Cereal$rating, Cereal$sugars)
+plot(Cereal$rating, Cereal$potass)
+cor(Cereal$rating, Cereal$potass)
+plot(Cereal$rating, Cereal$vitamins)
+cor(Cereal$rating, Cereal$vitamins)
+plot(Cereal$rating, Cereal$cups)
+cor(Cereal$rating, Cereal$cups)
+```
+\
+Looking at the plots, there seems to be no outlier but an outlier in the ratings. One of the cereals has a rating of 93.7 even though the range of most of the ratings sit between 20<y<70. The leverage should not be removed from the data because the leverage follows the linear trend of most of the predictors, but some predictors may be statistically insignificant to the best linear model.\   
+
+(b) (3pts) Use the lm function in R to fit the MLR model
+with *rating* as the response and the other $8$ variables as
+predictors. Display the summary output.
+
+```{r 1b}
+lm_Cereal1 <- lm(rating~protein+fat+fiber+carbo+sugars+potass+vitamins+cups, data = Cereal)
+summary(lm_Cereal1)
+```
+
+(c)(3pts) Which predictor variables are statistically
+significant under the significance threshold value of 0.01?
+
+\
+From the summary table, we can see that the variables of
+protein, fat, fiber, sugars, and vitamins are statistically
+significant under the significance threshold value of 0.01.\
+
+(d)(2pts) What proportion of the total variation in the
+response is explained by the predictors?
+
+\
+The R-Squared value tells us that 90.37% of the total
+variation in the resposne is explained by the predictors.\
+
+(e)(3pts) What is the null hypothesis of the global F-test?
+What is the p-value for the global F-test? Do the 7
+predictor variables explain a significant proportion of the
+variation in the response?
+
+\
+The null hypothesis of the global F-test is when the model
+with no predictors and the model with predictors are the
+same. The global p-value of the F-test is shown in the
+summary as less than 2.2e\^-16. The 7 predictor variables do
+explain a significant proportion of the variation in the
+response as more than 90% of the variaition is explained.\
+
+(f)(2pts) Consider testing the null hypothesis
+$H_0: \beta_{carbo} = 0$, where $\beta_{carbo}$ is the
+coefficient corresponding to *carbohydrates* in the MLR
+model. Use the t value available in the summary output to
+compute the p-value associated with this test, and verify
+that the p-value you get is identical to the p-value
+provided in the summary output.
+
+
+```{r 1f}
+lm_Cereal2 <- lm(rating~protein+fat+fiber+sugars+potass+vitamins+cups, data = Cereal)
+summary(lm_Cereal2)
+```
+\
+As carbohydrates were not statistically significant to the
+original model, when the new model is created without the
+carbohydrate predictor, the coefficient of determination,
+0.9037, and the p-value, less than 2.2e\^-16, is still the
+same as the original model.\
+
+(g)(4pts)Suppose we are interested in knowing if either
+*vitamins* or *potass* had any relation to the response
+*rating*. What would be the corresponding null hypothesis of
+this statistical test? Construct a F-test, report the
+corresponding p-value, and your conclusion.
+
+\
+The null hypothesis will be when the model relating rating
+to vitamins and/or potassium does not differ to rating without
+relation to vitamins and/or potassium.\
+
+```{r 1g}
+# Creating F-test
+fullmodel <- lm(rating~protein+fat+fiber+sugars+potass+vitamins+cups, data = Cereal)
+nullmodel <- lm(rating~protein+fat+fiber+sugars+cups, data = Cereal)
+(anova <- anova(nullmodel, fullmodel))
+
+# Finding p-value
+(pval <- 1 - pf(anova$F[2], 2, 69))
+```
+\
+From the summary table and calculated p-value, we can
+conclude to reject the null hypothesis. The two predictors
+are statistically significant in our model and the p-value
+is too small to consider the null hypothesis.\
+
+(h)(3pts) Use the summary output to construct a 99%
+confidence interval for $\beta_{protein}$. What is the
+interpretation of this confidence interval?
+
+```{r 1h}
+lower_bound = lm_Cereal1$coefficients["protein"] - (0.66433 * qt(p = 0.005, df = 68, lower.tail = FALSE))
+upper_bound = lm_Cereal1$coefficients["protein"] + (0.66433 * qt(p = 0.005, df = 68, lower.tail = FALSE))
+```
+
+Protein has a confidence interval of (`r lower_bound`, `r upper_bound`).
+\
+
+(i)(3pts) What is the predicted *rating* for a cereal brand
+with the following information:\
+- Protein=3 - Fat=5 - Fiber=2 - Carbo=13 - Sugars=6 -
+Potass=60 - Vitamins=25 - Cups=0.8\
+
+```{r 1i}
+# Data frame for new predictor variables
+new_Cereal = data.frame(protein = 3, fat = 5, fiber = 2, carbo = 13, sugars = 6, potass = 60, vitamins = 25, cups = 0.8)
+
+# Prediction
+prediction <- predict(lm_Cereal1, newdata = new_Cereal)
+```
+
+\
+The predicted rating of the given predictor variables is `r prediction`.
+
+(j). (3pts) What is the 95% prediction interval for the
+observation in part (i)? What is the interpretation of this
+prediction interval?
+\
+```{r}
+predict(lm_Cereal1, newdata = new_Cereal, interval = "confidence", level = 0.95)
+```
+
+The values printed from the function show the possible
+values of rating given the model with a 95% accuracy. This
+means that the model is not guaranteed to be correct and the
+true value of the rating ranges from 24.43562 to 35.42054.\
+
+Q2.(20pts) Consider the MLR model with $p$ predictors:
+$$\mathbf{y}=\mathbf{X}\boldsymbol \beta+\boldsymbol\epsilon, \qquad \boldsymbol \epsilon \sim N_n(\boldsymbol 0,\sigma^2\boldsymbol I_n)$$
+If we define $\hat\sigma^2=\frac{SSR}{n-p^*}$, with
+$p^*=p+1$. Use theoretical results from the lectures to show
+that $\hat\sigma^2$ is an unbiased estimator of $\sigma^2$.
+Find $V(\hat\sigma^2)$.\        
+$SSR = \hat\epsilon^{T}\hat\epsilon$
+$= (M\epsilon)^{T}(M\epsilon)$\
+$= \epsilon^{T}M\epsilon$\
+$\hat\sigma^2 = \frac{SSR}{n - p*}$\
+$E[\hat\sigma^2] = \frac{E(\epsilon^{T}M\epsilon)}{n - p*}$\
+$= \frac{E(\epsilon^{T}M\epsilon)}{n - p*}$\
+Since $\frac{\epsilon^{T}M\epsilon}{\sigma^2}$ is a Chi-squared distribution, the mean of $\epsilon^{T}M\epsilon$ is $(n - p*)\sigma^2$\
+$= \sigma^2$\
+$Bias[\sigma^2] = E[\hat\sigma^2] - \sigma^2 = \sigma^2 - \sigma^2 = 0$\
+\
+$V(\hat\sigma^2) = \frac{1}{(n - p^*)^2}V(\epsilon^{T}M\epsilon)$\
+$V(\epsilon^{T}M\epsilon) = 2tr[(M\epsilon)^2] + 4\mu^{T}M \epsilon M\mu$\
+$V(\hat\sigma^2) = \frac{2tr[(M\epsilon)^2] + 4\mu^{T}M \epsilon M\mu}{(n - p^*)^2}$
+
+
+# Appendix
+```{r appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
+
+
+

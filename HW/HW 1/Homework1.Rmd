@@ -1,0 +1,202 @@
+---
+title: "Homework 1"
+author: "Alex Wako"
+output: pdf_document
+---
+
+```{r setup, echo=FALSE}
+library(knitr)
+library(MASS)
+# set global chunk options: images will be 7x5 inches
+knitr::opts_chunk$set(fig.width=7, fig.height=5)
+options(digits = 4)
+```
+
+1. The dataset *trees* contains measurements of *Girth* (tree diameter) in inches, *Height* in feet, and *Volume* of timber (in cubic feet) of a sample of 31 felled black cherry trees. The following commands can be
+used to read the data into R.
+
+```{r data1}
+# the data set "trees" is contained in the R package "datasets"
+require(datasets)
+head(trees)
+```
+
+(a) (1pt) Briefly describe the data set *trees*, i.e., how many observations (rows) and how many variables (columns) are there in the data set? What are the variable names?
+
+```{r 1a, echo = FALSE}
+# The dimensions of the tree data set
+(dim(trees))
+```
+
+The trees data set has 31 rows and 3 variables. The names of the variables are Girth, Height, and Volume.
+
+(b) (2pts) Use the *pairs* function to construct a scatter plot matrix of the logarithms of Girth, Height and Volume.
+
+```{r 1b, fig.width = 4, fig.height = 4, echo = FALSE}
+# Scatter plot matrix of the three variables
+pairs(trees)
+```
+
+(c) (2pts) Use the *cor* function to determine the correlation matrix for the three (logged) variables.
+
+```{r 1c, echo = FALSE}
+# Correlation matrix of the three variables
+cor(trees)
+```
+
+(d) (2pts) Are there missing values?
+
+```{r 1d, echo = FALSE}
+# Number of NA values
+sum(is.na(trees))
+```
+
+There are no missing values.
+
+(e) (2pts) Use the *lm* function in R to fit the multiple regression model:
+
+$$\log (Volume_i)=\beta_0 + \beta_1\log(Girth_i)+\beta_2\log(Height_i) + \epsilon_i$$
+and print out the summary of the model fit.
+
+```{r 1e, echo = FALSE}
+# Creating variables representing y, x1, and x2
+y <- trees$Volume
+x1 <- trees$Girth
+x2 <- trees$Height
+
+# Fitting a linear model to the tree data using the given formula
+lm_tree <- lm(log(y) ~ log(x1) + log(x2))
+summary(lm_tree)
+```
+
+(f) (3pts) Create the design matrix (i.e., the matrix of predictor variables), $X$, for the model in (e), and verify that the least squares coefficient estimates in the summary output are given by the least squares
+formula: $\hat{\beta}=(X^TX)^{-1}X^Ty$.
+
+```{r 1f, echo = FALSE}
+model_matrix <- model.matrix(lm_tree)
+model_matrix
+beta_hat <- ginv(t(model_matrix) %*% model_matrix) %*% t(model_matrix) %*% log(y)
+beta_hat
+```
+
+The least squares coefficient given in the summary output matches the least squares coefficient found through $\hat\beta = (X^{T}X)^{-1}X^{T}y$.
+
+(g) (3pts) Compute the predicted response values from the fitted regression model, the residuals, and an estimate of the error variance $Var(\epsilon)=\sigma^2$.
+
+```{r 1g, echo = FALSE}
+beta0_hat <- -6.631617
+beta1_hat <- 1.982650
+beta2_hat <- 1.117123
+y_hat <- beta0_hat + beta1_hat * log(x1) + beta2_hat * log(x2)
+residual <- log(y) - y_hat
+estimate_of_error <- sum((residual)^2)/28
+```
+
+Predicted response values: `r y_hat` \newline
+
+The residuals: `r residual` \newline
+
+Estimate of error variance: `r estimate_of_error`
+
+2. Consider the simple linear regression model:
+
+$$\qquad y_i = \beta_0+\beta_1x_i+\epsilon_i$$
+
+**Part 1: $\beta_0=0$ **
+
+(a) (3pts) Assume $\beta_0=0$. What  is the interpretation of this assumption? What is the implication on the regression line? What does the regression line plot look like?
+
+When $\beta_{0}$ = 0, we can interpret the model as having no intercept. The errors are unobservable random variables with mean of 0 and variance of $\sigma^{2}$. The mean of $y_{i}$ would be $\beta_{1}x_{i}$, the variance of $y_{i}$ would be $\sigma^{2}$, and the covariance would be 0. Therefore, the plot of the model would be a slope starting at the origin. The new model would be $y_{i}$ = $\beta_{1}x_{i}$ + $\epsilon_{i}$ regression line.
+
+(b) (4pts) Derive the LS estimate of $\beta_1$ when $\beta_0=0$.
+
+arg $min_{\beta_{0}}$ SSR
+= $\sum_{i = 1} ^ {n} (y_{i} - \beta_{0} - \beta_{1}x_{i}) ^ 2$  
+$\displaystyle \frac{\partial}{\partial \beta_{1}}\sum_{i = 1} ^ {n} (y_{i} - \beta_{0} - \beta_{1}x_{i}) ^ 2$    
+= $\sum_{i = 1} ^ {n} x_{i}(y_{i} - \beta_{0} - \beta_{1}x_{i})$      
+Since $\beta_{0}$ = 0:  
+= $\sum_{i = 1} ^ {n} x_{i}(y_{i} - \beta_{1}x_{i})$      
+= $\sum_{i = 1} ^ {n} x_{i}y_{i} - \beta_{1}x_{i}^2)$     
+= $\sum_{i = 1} ^ {n} x_{i}y_{i} - \sum_{i = 1} ^ {n} \beta_{1}x_{i}^2$     
+= $\sum_{i = 1} ^ {n} x_{i}y_{i} - \beta_{1}\sum_{i = 1} ^ {n} x_{i}^2$     
+=> $\sum_{i = 1} ^ {n} x_{i}y_{i} - \beta_{1}\sum_{i = 1} ^ {n} x_{i}^2$ = 0  
+=> $\sum_{i = 1} ^ {n} x_{i}y_{i} = \beta_{1}\sum_{i = 1} ^ {n} x_{i}^2$      
+=> $\beta_{1} = \frac{\sum_{i = 1} ^ {n} x_{i}y_{i}}{\sum_{i = 1} ^ {n} x_{i}^2}$
+
+(c) (3pts) How can we introduce this assumption within the *lm* function?
+
+We can introduce the assumption within the lm function by adding 0 into the formula to indicate that a constant does not exist in the model.
+
+**Part 2: $\beta_1=0$**
+
+(d) (3pts) For the same model, assume $\beta_1=0$. What  is the interpretation of this assumption? What is the implication on the regression line? What does the regression line plot look like?
+
+When $\beta_{1}$ = 1, we can interpret the model as not having a slope. The errors are still unobservable random variables with mean of 0 and variance of $\sigma^{2}$. The mean of $y_{i}$ would be $\beta_{0}$, the variance of $y_{i}$ would still be $\sigma^{2}$, and the covariance would still be 0. Therefore, the plot of the model would always be a constant horizontal line. The new model would be $y_{i}$ = $\beta_{0}$ + $\epsilon_{i}$ regression line.
+
+(e) (4pts)Derive the LS estimate of $\beta_0$ when $\beta_1=0$.
+
+arg $min_{\beta_{0}}$ SSR
+= $\sum_{i = 1} ^ {n} (y_{i} - \beta_{0} - \beta_{1}x_{i}) ^ 2$  
+$\displaystyle \frac{\partial}{\partial \beta_{0}}\sum_{i = 1} ^ {n} (y_{i} - \beta_{0} - \beta_{1}x_{i}) ^ 2$    
+= $\sum_{i = 1} ^ {n} (y_{i} - \beta_{0} - \beta_{1}x_{i})$   
+= n$\overline{y}$ - n$\beta_{0}$ - n$\beta_{1}\overline{x}$ = 0   
+Since $\beta_{1}$ = 0:    
+=> n$\overline{y}$ - n$\beta_{0}$ = 0    
+=> n$\overline{y}$ = n$\beta_{0}$  
+=> $\overline{y}$ = $\beta_{0}$
+
+(f) (3pts)How can we introduce this assumption within the *lm* function?
+
+We can introduce the assumption within the lm function by creating a formula relating $y_{i}$ to only $\beta_{0}$.
+
+3. Consider the simple linear regression model:
+
+$$\qquad y_i = \beta_0+\beta_1x_i+\epsilon_i$$
+
+(a) (10pts) Use the LS estimation general result $\hat{\beta}=(X^TX)^{-1}X^Ty$ to find the explicit estimates for $\beta_0$ and $\beta_1$.
+
+$\hat\beta = (X^{T}X)^{-1}X^{T}y$     
+    
+We are trying to solve for $\beta_{0}$ and $\beta_{1}$, so for the purpose of this problem, let $\beta_{0}$ = $\frac{\sum(X_{i} - \overline{X})(Y_{i} - \overline{Y})}{\sum(X_{i} - \overline{X})^{2}}$ = $\frac{SS_{xy}}{SS_{x}}$.   
+    
+$(X^{T}X)^{-1}$ = $\frac{1}{n}\left[\begin{array}{rrr} n & \sum x_{i} \\\ \sum x_{i} & \sum x_{i}^{2} \end{array}\right]^{-1}$  
+= $\frac{1}{nSS_{x}}\left[\begin{array}{rrr} \sum x_{i}^{2} & -\sum x_{i} \\\ -\sum x{i} & n \end{array}\right]$  
+
+$(X^{T}y)$ = $\left[\begin{array}{rrr} 1 & ... & 1 \\\ x_{1} & ... & x_{n} \end{array}\right]\left[\begin{array}{rrr} y_{1} \\\ ... \\\ y_{n} \end{array}\right]$     
+= $\left[\begin{array}{rrr} \sum_{i = 1}^{n} y_{i} \\\ \sum_{i = 1}^{n} x_{i}y_{i} \end{array}\right]$         
+    
+$(X^{T}X)^{-1}X^{T}y$ = $\frac{1}{nSS_{x}}\left[\begin{array}{rrr} \sum x_{i}^{2} & -\sum x_{i} \\\ -\sum x{i} & n \end{array}\right] \left[\begin{array}{rrr} \sum_{i = 1}^{n} y_{i} \\\ \sum_{i = 1}^{n} x_{i}y_{i} \end{array}\right]$         
+= $\frac{1}{nSS_{x}} \left[\begin{array}{rrr} \sum x_{i}^{2} \sum y_{i} - \sum x_{i} \sum x_{i}y_{i} \\\ -\sum x_{i} \sum y_{i} + n\sum x_{i}y_{i} \end{array}\right]$     
+= $\frac{1}{SS_{x}} \left[\begin{array}{rrr} \overline{y} \sum x_{i}^{2} - \overline{x} \sum x_{i}y_{i} \\\ \sum x_{i}y_{i} - n\overline{x}\overline{y} \end{array}\right]$     
+= $\frac{1}{SS_{x}} \left[\begin{array}{rrr} \overline{y} \sum x_{i}^{2} - \overline{y}n\overline{x}^2 + \overline{x}n\overline{x}\overline{y} - \overline{x} \sum{x_{i}}{y_{i}} \\\ SS_{xy} \end{array}\right]$     
+= $\frac{1}{SS_{x}} \left[\begin{array}{rrr} \overline{y}SS_{x} - SS_{xy}\overline{x} \\\ SS_{xy} \end{array}\right]$     
+= $\left[\begin{array}{rrr} \overline{y} - \frac{SS_{xy}}{SS_{x}}\overline{x} \\\ \frac{SS_{xy}}{SS_{x}} \end{array}\right]$
+=> $\left[\begin{array}{rrr} \beta_{0} \\\ \beta_{1} \end{array}\right]$  
+
+(b) (5pts) Show that the LS estimates $\hat{\beta}_0$ and $\hat{\beta}_1$ are unbiased estimates for $\beta_0$ and $\beta_1$ respectively.
+
+$Bias[\hat\beta_{1}] = E[\hat\beta_{1}] - \beta_{1}$      
+$E[\hat\beta_{1}] = E[\frac{\sum(X_{i} - \overline{X})(Y_{i} - \overline{Y})}{\sum(X_{i} - \overline{X})^{2}}]$      
+= $\frac{E[\sum(X_{i} - \overline{X})Y_{i} - \overline{Y}\sum(X_{i} - \overline{X})]}{\sum(X_{i} - \overline{X})^{2}}$      
+= $\frac{\sum(X_{i} - \overline{X})E[Y_{i}]}{\sum(X_{i} - \overline{X})^{2}}$\newline
+= $\frac{\sum(X_{i} - \overline{X})(\beta_{0} - \beta_{1}X_{i})}{\sum(X_{i} - \overline{X})^{2}}$     
+= $\frac{\beta_{0}\sum(X_{i} - \overline{X}) + \beta_{1}\sum(X_{i} - \overline{X})X_{i}}{\sum(X_{i} - \overline{X})^{2}}$      
+= $\beta_{1}\frac{\sum(X_{i} - \overline{X})(X_{i} - \overline{X} + \overline{X})}{\sum(X_{i} - \overline{X})^{2}}$     
+= $\beta_{1}\frac{\sum(X_{i} - \overline{X})^{2}}{\sum(X_{i} - \overline{X})^{2}}$     
+= $\beta_{1}$     
+$Bias[\hat\beta_{1}] = \beta_{1} - \beta_{1}$ = 0       
+\newline
+$Bias[\hat\beta_{0}] = E[\hat\beta_{0}] - \beta_{0}$      
+$E[\hat\beta_{0}] = E[\overline{Y} - \hat\beta_{1}\overline{X}]$     
+= $E[\frac{1}{n}\sum{Y_{i}} - \hat\beta_{1}\overline{X}]$     
+= $\frac{1}{n}\sum{E[Y_{i}]} - E[\hat\beta_{1}]\overline{X}$      
+= $\frac{1}{n}\sum(\beta_{0} + \beta_{1}X_{i}) - \beta_{1}\overline{X}$     
+= $\beta_{0} + \beta_{1}\overline{X} - \beta_{1}\overline{X}$     
+= $\beta_{0}$     
+$Bias[\hat\beta_{0}] = \beta_{0} - \beta_{0}$ = 0 
+
+# Appendix
+```{r appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
+
+
